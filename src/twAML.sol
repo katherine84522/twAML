@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.18;
 
-import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
-import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "lib/openzeppelin-contracts-upgradeable/contracts/proxy/utils/Initializable.sol";
+import "lib/openzeppelin-contracts-upgradeable/contracts/access/OwnableUpgradeable.sol";
+import "lib/openzeppelin-contracts-upgradeable/contracts/utils/ReentrancyGuardUpgradeable.sol";
+import "lib/openzeppelin-contracts-upgradeable/contracts/utils/PausableUpgradeable.sol";
+import "lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
+import "lib/openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
+
 import "./TWAMLMath.sol";
 
 contract InnovativeTWAML is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgradeable {
@@ -35,6 +36,7 @@ contract InnovativeTWAML is Initializable, OwnableUpgradeable, ReentrancyGuardUp
     uint256 public minLockTime;
     uint256 public maxLockTime;
     uint256 public maxWeeklyWeightIncrease;
+    address public contractOwner;
 
     event Staked(address indexed user, uint256 amount, uint256 lockDuration);
     event Withdrawn(address indexed user, uint256 amount);
@@ -45,12 +47,14 @@ contract InnovativeTWAML is Initializable, OwnableUpgradeable, ReentrancyGuardUp
         IERC20 _stakingToken,
         uint256 _minLockTime,
         uint256 _maxLockTime,
-        uint256 _maxWeeklyWeightIncrease
+        uint256 _maxWeeklyWeightIncrease,
+        address _contractOwner
     ) public initializer {
-        __Ownable_init();
+        __Ownable_init(_contractOwner);
         __ReentrancyGuard_init();
         __Pausable_init();
 
+        contractOwner = _contractOwner;
         stakingToken = _stakingToken;
         minLockTime = _minLockTime;
         maxLockTime = _maxLockTime;
@@ -170,5 +174,9 @@ contract InnovativeTWAML is Initializable, OwnableUpgradeable, ReentrancyGuardUp
         uint256 _participantCount
     ) {
         return (totalStaked, totalWeight, totalWeight > 0 ? totalStaked / totalWeight : 0);
+    }
+
+    function getUserInfo(address account) public view returns (UserInfo memory) {
+        return userInfo[account];
     }
 }
