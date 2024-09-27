@@ -28,6 +28,7 @@ contract InnovativeTWAMLTest is Test {
         // Deploy the InnovativeTWAML contract and initialize it
         twAML = new InnovativeTWAML();
         twAML.initialize(stakingToken, 1 days, 30 days, 100, contractOwner);
+        twAML.setRewardRate(2);
     }
 
     function testInitialParameters() public {
@@ -53,7 +54,37 @@ contract InnovativeTWAMLTest is Test {
         assertEq(user.lockEndTime, block.timestamp + 7 days);
     }
 
-    function testWithdraw() public {
+
+    function testGetReward() public {
+        uint256 stakeAmount = 10 * 10 ** stakingToken.decimals();
+        
+        // Transfer tokens to the test contract and stake them first
+        stakingToken.transfer(address(this), stakeAmount);
+        stakingToken.approve(address(twAML), stakeAmount);
+        twAML.stake(stakeAmount, 7 days);
+
+        // Simulate some time passing for reward calculation
+        vm.warp(block.timestamp + 1 weeks); // Move time forward
+
+        // Set reward rate and update rewards
+        twAML.setRewardRate(10); // Example reward rate
+
+        uint256 initialBalance = stakingToken.balanceOf(address(this));
+        
+        // Get rewards
+        (uint256 reward1, uint256 userWeight, uint256 userRewardDebt, uint256 _accRewardPerShare) = twAML.getReward();
+        console.log('reward', reward1);
+        console.log('user.weight', userWeight);
+        console.log('user.rewardDebt',userRewardDebt);
+        console.log('accRewardPerShare', _accRewardPerShare);
+
+        uint256 finalBalance = stakingToken.balanceOf(address(this));
+        console.log('initialBalance: ', initialBalance);
+        console.log('finalBalance: ',finalBalance);
+        assert(finalBalance > initialBalance); // Ensure rewards were received
+    }
+
+        function testWithdraw() public {
         uint256 stakeAmount = 1000 * 10 ** stakingToken.decimals();
         
         // Transfer tokens to the test contract and stake them first
@@ -69,29 +100,6 @@ contract InnovativeTWAMLTest is Test {
         // Check user info after withdrawal
         InnovativeTWAML.UserInfo memory user = twAML.getUserInfo(address(this));
         assertEq(user.amount, 0); // Should be zero after withdrawal
-    }
-
-    function testGetReward() public {
-        uint256 stakeAmount = 1000 * 10 ** stakingToken.decimals();
-        
-        // Transfer tokens to the test contract and stake them first
-        stakingToken.approve(address(twAML), stakeAmount);
-        twAML.stake(stakeAmount, 7 days);
-
-        // Simulate some time passing for reward calculation
-        vm.warp(block.timestamp + 1 weeks); // Move time forward
-
-        // Set reward rate and update rewards
-        twAML.setRewardRate(10); // Example reward rate
-
-        uint256 initialBalance = stakingToken.balanceOf(address(this));
-        
-        // Get rewards
-        twAML.getReward();
-
-        uint256 finalBalance = stakingToken.balanceOf(address(this));
-        
-        assert(finalBalance > initialBalance); // Ensure rewards were received
     }
 
     function testEmergencyWithdraw() public {

@@ -7,7 +7,7 @@ import "lib/openzeppelin-contracts-upgradeable/contracts/utils/ReentrancyGuardUp
 import "lib/openzeppelin-contracts-upgradeable/contracts/utils/PausableUpgradeable.sol";
 import "lib/openzeppelin-contracts/contracts/token/ERC20/IERC20.sol";
 import "lib/openzeppelin-contracts/contracts/token/ERC20/utils/SafeERC20.sol";
-
+import "forge-std/console.sol"; 
 import "./TWAMLMath.sol";
 
 contract InnovativeTWAML is Initializable, OwnableUpgradeable, ReentrancyGuardUpgradeable, PausableUpgradeable {
@@ -102,8 +102,8 @@ contract InnovativeTWAML is Initializable, OwnableUpgradeable, ReentrancyGuardUp
         emit Withdrawn(msg.sender, amount);
     }
 
-    function getReward() external nonReentrant {
-        updateReward(msg.sender);
+    function getReward() external nonReentrant returns( uint256 _reward, uint256 userWeight, uint256 userRewardDebt, uint256 _accRewardPerShare){
+        // updateReward(msg.sender);
         UserInfo storage user = userInfo[msg.sender];
         uint256 reward = (user.weight * accRewardPerShare / 1e18) - user.rewardDebt;
         if (reward > 0) {
@@ -111,6 +111,9 @@ contract InnovativeTWAML is Initializable, OwnableUpgradeable, ReentrancyGuardUp
             stakingToken.safeTransfer(msg.sender, reward);
             emit RewardPaid(msg.sender, reward);
         }
+        updateReward(msg.sender);
+
+        return (reward, user.weight, user.rewardDebt, accRewardPerShare);
     }
 
     function updateReward(address _account) public {
